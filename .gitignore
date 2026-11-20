@@ -1,0 +1,12 @@
+__pycache__/
+*.py[cod]
+.venv/
+.idea/
+.git/
+*.db
+*.sqlite
+*.sqlite3
+*.log
+*.tmp
+*.temp
+docs/screenshots/*.tmp

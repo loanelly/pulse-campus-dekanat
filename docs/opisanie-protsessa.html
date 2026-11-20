@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <title>ПУЛЬС.Кампус — Описание процесса разработки с ИИ</title>
+  <style>
+    @page { size: A4; margin: 14mm; }
+    :body { margin: 0; }
+    body { font-family: Arial, "Segoe UI", sans-serif; color: #1d1f2a; line-height: 1.55; }
+    .cover { min-height: 245mm; display:flex; flex-direction:column; justify-content:center; text-align:center; page-break-after:always; background:linear-gradient(135deg,#f7f8ff,#eeeefe); border-radius:18px; }
+    .cover img { width:120px; height:120px; image-rendering:pixelated; object-fit:contain; margin:0 auto 18px; }
+    .cover h1 { margin:0; font-size:34px; } .cover p { color:#62667a; font-size:16px; } .cover .tag { display:inline-block; margin:14px auto 0; border-radius:999px; background:#5b5ce2; color:white; padding:9px 16px; font-weight:700; }
+    h2 { color:#5557cf; border-bottom:1px solid #e3e5ef; padding-bottom:7px; margin-top:28px; } h3 { margin-bottom:7px; }
+    .lead { background:#f2f2ff; border-left:5px solid #5b5ce2; border-radius:10px; padding:14px 16px; }
+    ul { margin-top:7px; } li { margin:6px 0; } code { background:#f1f2f6; border-radius:5px; padding:2px 5px; }
+    figure { margin:18px 0; page-break-inside:avoid; border:1px solid #e4e6ed; border-radius:12px; padding:8px; background:white; }
+    figure img { width:100%; max-height:560px; object-fit:contain; border-radius:8px; image-rendering:pixelated; }
+    figcaption { color:#74778a; font-size:12px; padding:7px 4px 3px; }
+    .grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; } .grid figure { margin:0; }
+    .prompt { background:#20232c; color:#f4f5fa; border-radius:10px; padding:12px 14px; font-size:13px; page-break-inside:avoid; }
+  </style>
+</head>
+<body>
+  <section class="cover">
+    <img src="../logo.png" alt="Маскот ПУЛЬС.Кампус">
+    <h1>ПУЛЬС.Кампус</h1>
+    <p>Описание процесса разработки с ИИ</p>
+    <div class="tag">Цифровой деканат будущего • Конкурсный концепт</div>
+  </section>
+
+  <h2>Проблема студентов и идея решения</h2>
+  <p class="lead">Расписание, оценки, справки и объявления разрознены по разным сервисам и чатам. ПУЛЬС.Кампус собирает учебные задачи в единое понятное окно и сокращает поиск нужного действия до пары касаний.</p>
+  <p>Выбран Neo-Minimalism Bento UI: главная информация разделена на самостоятельные карточки, сохраняя быстрый обзор. Быстрые переходы на расписание, успеваемость, заявки и уведомления работают и с большого экрана, и с телефона шириной от 360 px.</p>
+  
+    <figure>
+      <img src="screenshots/01_login.png" alt="Экран входа">
+      <figcaption><strong>Экран входа</strong><br>Быстрый демо-вход для жюри и оригинальный пиксельный маскот.</figcaption>
+    </figure>
+    
+
+  <h2>Технологии и ИИ-инструменты</h2>
+  <ul>
+    <li><strong>GitHub Copilot Agent в PyCharm</strong> — проектирование и реализация интерфейса и backend-сценариев.</li>
+    <li><strong>LLM-архитектор</strong> — постановка ТЗ, структура API, промпты и анализ ошибок ИИ.</li>
+    <li><strong>ИИ-инструменты графики</strong> — генерация и последующая интеграция пиксельного маскота рыжего осьминога.</li>
+    <li><strong>Python + SQLite</strong> — легкий сервер без внешних runtime-зависимостей.</li>
+    <li><strong>HTML/CSS/JavaScript</strong> — адаптивный интерфейс, темы и клиентская логика.</li>
+  </ul>
+
+  
+    <figure>
+      <img src="screenshots/02_dashboard_light.png" alt="Студенческий дашборд">
+      <figcaption><strong>Студенческий дашборд</strong><br>Ключевые функции собраны на одном экране в Bento-сетке.</figcaption>
+    </figure>
+    
+
+  <h2>Ключевые промпты и эволюция</h2>
+  <h3>1. Рабочий прототип вместо макета</h3>
+  <div class="prompt">«Создай работающий личный кабинет студента: вход, расписание, успеваемость, заявки и уведомления. Данные храни в SQLite, а пароли не сохраняй открытым текстом».</div>
+  <h3>2. Коммерческий Bento-редизайн</h3>
+  <div class="prompt">«Переделай интерфейс до уровня коммерческого продукта с светлой и темной темами, мобильным Tab Bar и виджетами следующей пары и академического пульса».</div>
+  <h3>3. Роли и маскот</h3>
+  <div class="prompt">«Добавь отличника, студента с пересдачей и сотрудника деканата. Используй загруженный logo.png в favicon, навигации, Login Hero и AI-виджете».</div>
+  <p>Правила для последующих изменений закреплены в <code>.github/copilot-instructions.md</code>: вымышленные данные, сохранение корпоративного маскота, проверка роли и владельца заявки.</p>
+
+  
+    <figure>
+      <img src="screenshots/03_mobile_360.png" alt="Мобильная версия">
+      <figcaption><strong>Мобильная версия</strong><br>Основные сценарии адаптированы для экрана 360 × 800 px.</figcaption>
+    </figure>
+    
+
+  <h2>Архитектура безопасности простыми словами</h2>
+  <ul>
+    <li><strong>Пароли:</strong> случайная соль + PBKDF2-SHA256, 120 000 итераций; в базе хранится только <code>соль$хеш</code>.</li>
+    <li><strong>Сессии:</strong> случайный токен подписан HMAC-SHA256 с секретом <code>APP_SECRET</code>, который берется из переменной окружения.</li>
+    <li><strong>Защита заявок:</strong> данные отдаются только владельцу, а сотрудник деканата определяется отдельной ролью <code>staff</code>.</li>
+    <li><strong>Отсутствие секретов:</strong> ключи не прописаны в браузере или исходном файле; для хостинга используется переменная окружения.</li>
+    <li><strong>Тестовые данные:</strong> использованы только вымышленные ФИО, направления и оценки.</li>
+  </ul>
+
+  <h2>Ручные этапы и качество</h2>
+  <p>Ручная проверка включала точную замену логотипа на загруженный оригинал, контроль мобильной сетки, исправление структуры SQLite для ролей, проверку статических заголовков сервера и запуск сценариев без реальных сервисов вуза.</p>
+  <div class="grid">
+    <figure><img src="../logo.png" alt="Логотип маскот"><figcaption><strong>Оригинальный логотип-маскот</strong><br>Используется во всех брендовых точках.</figcaption></figure>
+    <figure><img src="../Dockerfile" alt="Docker"><figcaption><strong>Готовность к деплою</strong><br>Dockerfile и amvera.yml для облачного хостинга.</figcaption></figure>
+  </div>
+</body>
+</html>

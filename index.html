@@ -5,23 +5,23 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#f4f5f8">
   <title>ПУЛЬС.Кампус — Цифровой деканат будущего</title>
-  <link rel="icon" type="image/png" href="/logo.png">
+  <link rel="icon" type="image/png" href="./logo.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="./styles.css">
 </head>
 <body>
   <main id="loginPage" class="login-page">
     <section class="login-intro" aria-label="О ПУЛЬС.Кампус">
-      <div class="concept-brand"><span class="brand-symbol"><img src="/logo.png" alt="" onerror="this.hidden=true;this.parentElement.classList.add('logo-fallback')"></span><span>ПУЛЬС<span>.Кампус</span></span></div>
+      <div class="concept-brand"><span class="brand-symbol"><img src="./logo.png" alt="" onerror="this.hidden=true;this.parentElement.classList.add('logo-fallback')"></span><span>ПУЛЬС<span>.Кампус</span></span></div>
       <div class="intro-copy">
         <p class="eyebrow">ЦИФРОВОЙ ДЕКАНАТ БУДУЩЕГО</p>
         <h1>Вся студенческая жизнь<br><span>на одной волне.</span></h1>
         <p>Расписание, успеваемость, документы и общение с деканатом — понятно, быстро и с телефона.</p>
       </div>
       <div class="mascot-card">
-        <img src="/logo.png" alt="Рыжий осьминог в очках — маскот ПУЛЬС.Кампус" onerror="this.onerror=null;this.src='/logo-fallback.svg'">
+        <img src="./logo.png" alt="Рыжий осьминог в очках — маскот ПУЛЬС.Кампус" onerror="this.onerror=null;this.src='./logo-fallback.svg'">
         <p><strong>8 рук для твоей учебы</strong><span>Расписание, справки и сессия в одном окне</span></p>
       </div>
       <div class="concept-badge"><i></i>Конкурсный концепт • Используются вымышленные данные</div>
@@ -56,20 +56,22 @@
             </button>
           </div>
         </div>
+        <button class="demo-reset" id="resetDemo" type="button">Сбросить демо-данные</button>
       </div>
     </section>
   </main>
 
   <div id="shell" class="shell" hidden>
     <aside class="sidebar">
-      <div class="concept-brand compact"><span class="brand-symbol"><img src="/logo.png" alt="" onerror="this.hidden=true;this.parentElement.classList.add('logo-fallback')"></span><span>ПУЛЬС<span>.Кампус</span></span></div>
+      <div class="concept-brand compact"><span class="brand-symbol"><img src="./logo.png" alt="" onerror="this.hidden=true;this.parentElement.classList.add('logo-fallback')"></span><span>ПУЛЬС<span>.Кампус</span></span></div>
       <nav id="desktopNav" aria-label="Основная навигация"></nav>
       <button class="profile-mini" id="profileMini" type="button"><span class="avatar" id="sidebarAvatar">АГ</span><span><strong id="sidebarName">Алексей Громов</strong><small id="sidebarMeta">ПИ-31 • 3 курс</small></span><i>···</i></button>
+      <button class="sidebar-reset" id="resetDemoShell" type="button">Сбросить демо-данные</button>
     </aside>
 
     <div class="workspace">
       <header class="topbar">
-        <div class="mobile-brand"><span class="brand-symbol"><img src="/logo.png" alt="" onerror="this.hidden=true;this.parentElement.classList.add('logo-fallback')"></span><strong>ПУЛЬС.Кампус</strong></div>
+        <div class="mobile-brand"><span class="brand-symbol"><img src="./logo.png" alt="" onerror="this.hidden=true;this.parentElement.classList.add('logo-fallback')"></span><strong>ПУЛЬС.Кампус</strong></div>
         <div class="page-heading"><p id="todayDate">Пятница, 20 ноября</p><h1 id="pageTitle">Доброе утро</h1></div>
         <div class="header-actions">
           <div class="concept-badge header-badge"><i></i>Конкурсный концепт • Вымышленные данные</div>
@@ -84,10 +86,10 @@
   </div>
 
   <button id="aiFab" class="ai-fab" type="button" aria-label="Открыть Осьминог-навигатор">
-    <img src="/logo.png" alt="" onerror="this.onerror=null;this.src='/logo-fallback.svg'">
+    <img src="./logo.png" alt="" onerror="this.onerror=null;this.src='./logo-fallback.svg'">
   </button>
   <section id="aiPanel" class="ai-panel" aria-label="AI-Навигатор кампуса" hidden>
-    <div class="ai-head"><span><i><img src="/logo.png" alt="" onerror="this.hidden=true"></i><strong>Осьминог-навигатор</strong></span><button id="closeAi" type="button">×</button></div>
+    <div class="ai-head"><span><i><img src="./logo.png" alt="" onerror="this.hidden=true"></i><strong>Осьминог-навигатор</strong></span><button id="closeAi" type="button">×</button></div>
     <div id="aiMessages" class="ai-messages"><p class="ai-message">Привет! Я Осьминог-навигатор. Спроси меня о справках, стипендии или долгах — разберёмся вместе!</p></div>
     <div class="ai-chips">
       <button data-answer="Справка для налоговой подается в разделе «Справки» за один шаг: выберите тип документа и нажмите «Отправить».|applications">Как заказать справку для налоговой?</button>
@@ -96,6 +98,6 @@
     </div>
   </section>
   <div id="toast" class="toast" role="status"></div>
-  <script src="/app.js"></script>
+  <script src="./app.js"></script>
 </body>
 </html>

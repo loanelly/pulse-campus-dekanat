@@ -24,6 +24,7 @@ button{cursor:pointer}
 .brand-symbol img{width:100%;height:100%;object-fit:cover}
 .brand-symbol.logo-fallback{background:var(--primary-soft);position:relative}
 .brand-symbol.logo-fallback:after{content:"🐙";font-size:20px}
+.demo-reset,.sidebar-reset{width:100%;border:0;background:transparent;color:var(--muted);font-size:10px;text-align:center;padding:12px 4px 0}.demo-reset:hover,.sidebar-reset:hover{color:var(--primary)}.sidebar-reset{padding:12px 4px;border-top:1px solid var(--line)}
 .mascot-card{position:absolute;z-index:2;right:44px;bottom:86px;width:min(360px,42%);min-height:92px;border:1px solid color-mix(in srgb,var(--primary) 14%,var(--line));border-radius:18px;background:color-mix(in srgb,var(--surface) 92%,transparent);display:grid;grid-template-columns:76px 1fr;align-items:center;gap:10px;padding:10px 14px 10px 8px;box-shadow:var(--shadow);backdrop-filter:blur(10px)}
 .mascot-card img,.mascot-svg{width:76px;height:76px;border-radius:14px;object-fit:contain;background:var(--coral)}
 .mascot-card p{margin:0}.mascot-card strong,.mascot-card span{display:block}.mascot-card strong{font-size:13px;letter-spacing:-.02em}.mascot-card span{margin-top:6px;color:var(--muted);font-size:10px;line-height:1.45}

@@ -1,16 +1,314 @@
 let user = null;
 let dashboard = null;
 let currentView = "home";
+let localMode = window.location.hostname.endsWith("github.io");
+let localEngine = null;
 
 const el = (s) => document.querySelector(s);
 const view = el("#view");
 
-async function api(url, options = {}) {
-  const response = await fetch(url, options);
-  const data = await response.json();
-  if (!response.ok) throw new Error(data.error || "Ошибка сервера");
+class LocalCampusEngine {
+  constructor() {
+    this.key = "pulse_campus_v1";
+  }
+
+  read() {
+    const raw = localStorage.getItem(this.key);
+    if (!raw) return null;
+    try {
+      const state = JSON.parse(raw);
+      return state.version === 1 ? state : null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  write(state) {
+    localStorage.setItem(this.key, JSON.stringify(state));
+  }
+
+  async hashPassword(password, saltHex) {
+    const salt = Uint8Array.from(saltHex.match(/.{1,2}/g).map((byte) => parseInt(byte, 16)));
+    const material = await crypto.subtle.importKey("raw", new TextEncoder().encode(password), "PBKDF2", false, ["deriveBits"]);
+    const bits = await crypto.subtle.deriveBits(
+      { name: "PBKDF2", salt, iterations: 120000, hash: "SHA-256" },
+      material,
+      256,
+    );
+    return Array.from(new Uint8Array(bits)).map((byte) => byte.toString(16).padStart(2, "0")).join("");
+  }
+
+  randomHex(length) {
+    const bytes = crypto.getRandomValues(new Uint8Array(length));
+    return Array.from(bytes).map((byte) => byte.toString(16).padStart(2, "0")).join("");
+  }
+
+  async seed() {
+    const users = [
+      {
+        id: 1,
+        login: "alexey",
+        name: "Алексей Громов",
+        faculty: "Факультет информационных технологий",
+        program: "Прикладная информатика",
+        course: 3,
+        group: "ПИ-31",
+        average: 4.92,
+        role: "student",
+        status: "Допуск к сессии",
+        gpa_status: "До стипендии осталось 1 балл",
+      },
+      {
+        id: 2,
+        login: "elena",
+        name: "Елена Соколова",
+        faculty: "Факультет социальных наук",
+        program: "Психология",
+        course: 2,
+        group: "ПС-21",
+        average: 3.82,
+        role: "student",
+        status: "Есть пересдача",
+        gpa_status: "Допуск с ограничениями",
+      },
+      {
+        id: 3,
+        login: "dean",
+        name: "Марина Белова",
+        faculty: "Методист деканата",
+        program: "Административная панель",
+        course: 0,
+        group: "Сотрудник",
+        average: 0,
+        role: "staff",
+        status: "Рабочая смена",
+        gpa_status: "Все заявки доступны",
+      },
+    ];
+
+    for (const user of users) {
+      user.passwordSalt = this.randomHex(16);
+      user.passwordHash = await this.hashPassword("Pulse2026!", user.passwordSalt);
+    }
+
+    const state = {
+      version: 1,
+      users,
+      sessionUserId: null,
+      nextApplicationId: 5,
+      applications: [
+        { id: 1, userId: 1, kind: "Справка об обучении", comment: "", status: "Готова", createdAt: "20 нояб. 2026", methodistComment: "Документ сформирован" },
+        { id: 2, userId: 1, kind: "Справка для налоговой", comment: "", status: "В работе", createdAt: "18 нояб. 2026", methodistComment: "" },
+        { id: 3, userId: 2, kind: "Справка о периоде обучения", comment: "Для оформления практики", status: "На рассмотрении", createdAt: "19 нояб. 2026", methodistComment: "" },
+        { id: 4, userId: 2, kind: "Заявление в деканат", comment: "Назначить пересдачу", status: "В работе", createdAt: "17 нояб. 2026", methodistComment: "" },
+      ],
+      announcements: [],
+    };
+    this.write(state);
+    return state;
+  }
+
+  async ensure() {
+    let state = this.read();
+    if (!state) state = await this.seed();
+    return state;
+  }
+
+  async reset() {
+    localStorage.removeItem(this.key);
+    return this.seed();
+  }
+
+  currentUser(state) {
+    return state.users.find((item) => item.id === state.sessionUserId) || null;
+  }
+
+  error(status, message) {
+    return { __error: true, status, body: { error: message } };
+  }
+
+  async request(path, options = {}) {
+    const state = await this.ensure();
+    const method = options.method || "GET";
+    let payload = {};
+    if (options.body) {
+      try {
+        payload = JSON.parse(options.body);
+      } catch (_) {
+        payload = {};
+      }
+    }
+
+    if (path === "/api/login" && method === "POST") {
+      const account = state.users.find((item) => item.login === payload.login);
+      if (!account) return this.error(401, "Неверный логин или пароль");
+      const digest = await this.hashPassword(String(payload.password || ""), account.passwordSalt);
+      if (digest !== account.passwordHash) return this.error(401, "Неверный логин или пароль");
+      state.sessionUserId = account.id;
+      this.write(state);
+      return { ok: true };
+    }
+
+    if (path === "/api/logout" && method === "POST") {
+      state.sessionUserId = null;
+      this.write(state);
+      return { ok: true };
+    }
+
+    const actor = this.currentUser(state);
+    if (path === "/api/me") {
+      if (!actor) return this.error(401, "Требуется вход");
+      return this.publicUser(actor);
+    }
+    if (!actor) return this.error(401, "Требуется вход");
+
+    if (path === "/api/dashboard") {
+      const schedule = [
+        { time: "09:30", title: "Проектирование интерфейсов", kind: "Практика", room: "Корпус 2 · ауд. 304", teacher: "Ирина Волкова", accent: "violet" },
+        { time: "11:20", title: "Основы машинного обучения", kind: "Лекция", room: "Корпус 1 · ауд. 118", teacher: "Алексей Солнечный", accent: "mint" },
+        { time: "14:10", title: "Базы данных", kind: "Семинар", room: "Корпус 3 · ауд. 220", teacher: "Марина Лесная", accent: "orange" },
+      ];
+      const grades = actor.id === 1
+        ? [
+            { subject: "Проектирование интерфейсов", grade: "5", kind: "Экзамен", trend: "+1" },
+            { subject: "Основы машинного обучения", grade: "Зачёт", kind: "Зачёт", trend: "" },
+            { subject: "Базы данных", grade: "4", kind: "Экзамен", trend: "Стабильно" },
+            { subject: "Командная разработка", grade: "5", kind: "Курс. проект", trend: "+1" },
+          ]
+        : [
+            { subject: "Введение в психологию", grade: "4", kind: "Экзамен", trend: "Стабильно" },
+            { subject: "Статистика", grade: "Пересдача", kind: "Экзамен", trend: "Долг" },
+            { subject: "История науки", grade: "Зачёт", kind: "Зачёт", trend: "" },
+          ];
+      const applications = state.applications
+        .filter((item) => item.userId === actor.id)
+        .map((item) => ({ id: item.id, kind: item.kind, status: item.status, created_at: item.createdAt }));
+      return {
+        schedule,
+        grades,
+        applications,
+        notifications: [
+          ...state.announcements.map((text) => ({ title: "Срочное объявление деканата", text, type: "warning", time: "Сейчас" })),
+          { title: "Расписание на 21 ноября изменилось", text: "Пара перенесена в аудиторию 304.", type: "warning", time: "12 мин" },
+          { title: "До сдачи проекта 2 дня", text: "Командная разработка · до 22 ноября.", type: "deadline", time: "1 ч" },
+          { title: "Справка готова", text: "Заявку можно скачать в разделе «Заявки».", type: "success", time: "Вчера" },
+        ],
+      };
+    }
+
+    if (path === "/api/applications" && method === "POST") {
+      if (actor.role !== "student") return this.error(403, "Сотрудник не подает студенческие заявки");
+      const kind = String(payload.kind || "").trim();
+      if (!kind) return this.error(400, "Выберите тип заявки");
+      const application = {
+        id: state.nextApplicationId++,
+        userId: actor.id,
+        kind,
+        comment: String(payload.comment || "").trim(),
+        status: "На рассмотрении",
+        createdAt: "20 нояб. 2026",
+        methodistComment: "",
+      };
+      state.applications.unshift(application);
+      this.write(state);
+      return { id: application.id, kind: application.kind, status: application.status, created_at: application.createdAt };
+    }
+
+    const applicationMatch = path.match(/^\/api\/applications\/(\d+)(?:\/(certificate))?$/);
+    if (applicationMatch) {
+      const id = Number(applicationMatch[1]);
+      const application = state.applications.find((item) => item.id === id);
+      if (!application) return this.error(404, "Заявка не найдена");
+      if (application.userId !== actor.id && actor.role !== "staff") {
+        return this.error(403, "Нет доступа к чужой заявке");
+      }
+      if (applicationMatch[2] === "certificate") {
+        if (!["Готова", "Готово"].includes(application.status)) return this.error(409, "Справка ещё не готова");
+        return { id, kind: application.kind, status: application.status, student: state.users.find((item) => item.id === application.userId).name };
+      }
+      return application;
+    }
+
+    if (path === "/api/staff/applications") {
+      if (actor.role !== "staff") return this.error(403, "Нет доступа");
+      return {
+        applications: state.applications.map((application) => {
+          const account = state.users.find((item) => item.id === application.userId);
+          return {
+            id: application.id,
+            kind: application.kind,
+            comment: application.comment,
+            status: application.status,
+            created_at: application.createdAt,
+            name: account.name,
+            group_name: account.group,
+            user_id: account.id,
+            methodist_comment: application.methodistComment,
+          };
+        }),
+      };
+    }
+
+    if (path === "/api/staff/applications/status" && method === "POST") {
+      if (actor.role !== "staff") return this.error(403, "Нет доступа");
+      const allowed = ["На рассмотрении", "В работе", "Готова"];
+      if (!allowed.includes(payload.status)) return this.error(400, "Некорректный статус");
+      const application = state.applications.find((item) => item.id === Number(payload.id));
+      if (!application) return this.error(404, "Заявка не найдена");
+      application.status = payload.status;
+      application.methodistComment = String(payload.comment || "").trim();
+      this.write(state);
+      return { ok: true };
+    }
+
+    if (path === "/api/staff/announcement" && method === "POST") {
+      if (actor.role !== "staff") return this.error(403, "Нет доступа");
+      const text = String(payload.text || "").trim();
+      if (!text) return this.error(400, "Введите текст объявления");
+      state.announcements.unshift(text);
+      this.write(state);
+      return { ok: true, text };
+    }
+
+    return this.error(404, "Не найдено");
+  }
+
+  publicUser(account) {
+    return {
+      id: account.id,
+      name: account.name,
+      faculty: account.faculty,
+      program: account.program,
+      course: account.course,
+      group: account.group,
+      average: account.average,
+      role: account.role,
+      status: account.status,
+      gpa_status: account.gpa_status,
+    };
+  }
+}
+
+async function apiRequest(url, options = {}) {
+  if (!localMode) {
+    try {
+      const response = await fetch(url, options);
+      if ([404, 405].includes(response.status)) throw new Error("Static fallback");
+      const data = await response.json();
+      if (!response.ok) throw Object.assign(new Error(data.error || "Ошибка сервера"), { status: response.status });
+      return data;
+    } catch (error) {
+      if (error.status === 401 || error.status === 403) throw error;
+      localMode = true;
+    }
+  }
+  if (!localEngine) localEngine = new LocalCampusEngine();
+  const data = await localEngine.request(url, options);
+  if (data && data.__error) throw Object.assign(new Error(data.body.error), { status: data.status });
   return data;
 }
+
+const api = apiRequest;
 
 function toast(text) {
   const box = el("#toast");
@@ -279,7 +577,7 @@ async function submitApplication(event) {
 function openCertificate(id) {
   const modal = document.createElement("div");
   modal.className = "modal-backdrop";
-  modal.innerHTML = `<div class="modal"><div class="card-head" style="padding:0 0 14px"><h3>Справка об обучении</h3><button type="button" id="closeModal">×</button></div><div class="certificate"><img class="certificate-logo" src="/logo.png" alt="ПУЛЬС.Кампус" onerror="this.onerror=null;this.src='/logo-fallback.svg'"><p style="font-size:10px;color:var(--muted)">ПУЛЬС.Кампус • Конкурсный концепт</p><h2>Справка № ${String(id).padStart(4, "0")}</h2><p>Настоящая справка выдана <strong>${user.name}</strong>, обучающемуся по направлению «${user.program}».</p><div class="qr"></div><small style="color:var(--muted)">Для проверки документа в прототипе</small></div><div class="modal-actions"><button type="button" id="closeModal2">Закрыть</button><button class="primary-button" type="button" id="printCert">Печать / PDF</button></div></div>`;
+  modal.innerHTML = `<div class="modal"><div class="card-head" style="padding:0 0 14px"><h3>Справка об обучении</h3><button type="button" id="closeModal">×</button></div><div class="certificate"><img class="certificate-logo" src="./logo.png" alt="ПУЛЬС.Кампус" onerror="this.onerror=null;this.src='./logo-fallback.svg'"><p style="font-size:10px;color:var(--muted)">ПУЛЬС.Кампус • Конкурсный концепт</p><h2>Справка № ${String(id).padStart(4, "0")}</h2><p>Настоящая справка выдана <strong>${user.name}</strong>, обучающемуся по направлению «${user.program}».</p><div class="qr"></div><small style="color:var(--muted)">Для проверки документа в прототипе</small></div><div class="modal-actions"><button type="button" id="closeModal2">Закрыть</button><button class="primary-button" type="button" id="printCert">Печать / PDF</button></div></div>`;
   document.body.append(modal);
   modal.querySelectorAll("#closeModal,#closeModal2").forEach((button) => button.onclick = () => modal.remove());
   modal.querySelector("#printCert").onclick = () => window.print();
@@ -389,6 +687,20 @@ document.querySelectorAll("[data-answer]").forEach((button) => button.addEventLi
   el("#aiMessages").append(message);
   setTimeout(() => setView(target), 650);
 }));
+
+async function resetDemoData() {
+  if (!localEngine) localEngine = new LocalCampusEngine();
+  await localEngine.reset();
+  dashboard = null;
+  localMode = true;
+  toast("Демо-данные сброшены");
+  setTimeout(() => location.reload(), 350);
+}
+
+const resetDemo = el("#resetDemo");
+const resetDemoShell = el("#resetDemoShell");
+if (resetDemo) resetDemo.addEventListener("click", resetDemoData);
+if (resetDemoShell) resetDemoShell.addEventListener("click", resetDemoData);
 
 initTheme();
 boot();

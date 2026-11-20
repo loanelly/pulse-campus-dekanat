@@ -1,4 +1,4 @@
-let user = null;
+let currentUser = null;
 let dashboard = null;
 let currentView = "home";
 let localMode = window.location.hostname.endsWith("github.io");
@@ -117,6 +117,13 @@ class LocalCampusEngine {
   async reset() {
     localStorage.removeItem(this.key);
     return this.seed();
+  }
+
+  clearSession() {
+    const state = this.read();
+    if (!state) return;
+    state.sessionUserId = null;
+    this.write(state);
   }
 
   currentUser(state) {
@@ -352,7 +359,7 @@ async function login(login, password) {
 
 async function boot() {
   try {
-    user = await api("/api/me");
+    currentUser = await api("/api/me");
     showShell();
   } catch (_) {
     el("#loginPage").hidden = false;
@@ -363,11 +370,11 @@ async function boot() {
 function showShell() {
   el("#loginPage").hidden = true;
   el("#shell").hidden = false;
-  el("#sidebarName").textContent = user.name;
-  el("#sidebarMeta").textContent = user.role === "staff" ? "Сотрудник деканата" : `${user.group} • ${user.course} курс`;
-  el("#sidebarAvatar").textContent = initials(user.name);
+  el("#sidebarName").textContent = currentUser.name;
+  el("#sidebarMeta").textContent = currentUser.role === "staff" ? "Сотрудник деканата" : `${currentUser.group} • ${currentUser.course} курс`;
+  el("#sidebarAvatar").textContent = initials(currentUser.name);
   buildNavigation();
-  if (user.role === "staff") {
+  if (currentUser.role === "staff") {
     setView("staff");
   } else {
     setView("home");
@@ -375,13 +382,13 @@ function showShell() {
 }
 
 function buildNavigation() {
-  const items = user.role === "staff"
+  const items = currentUser.role === "staff"
     ? [["staff", "▦", "Управление"], ["notifications", "♢", "Объявления"]]
     : [["home", "⌂", "Главная"], ["schedule", "▦", "Расписание"], ["grades", "◫", "Оценки"], ["applications", "▧", "Справки"], ["notifications", "♢", "Уведомления"]];
   el("#desktopNav").innerHTML = items.map(([name, icon, label]) =>
     `<button class="nav-item ${name === currentView ? "active" : ""}" type="button" data-view="${name}"><i>${icon}</i><span>${label}</span>${name === "notifications" ? "<b>3</b>" : ""}</button>`
   ).join("");
-  el("#bottomNav").innerHTML = user.role === "staff"
+  el("#bottomNav").innerHTML = currentUser.role === "staff"
     ? `<button class="nav-item active" type="button" data-view="staff"><i>▦</i><span>Заявки</span></button><button class="nav-item" type="button" data-view="notifications"><i>♢</i><span>Объявления</span></button>`
     : items.slice(0, 5).map(([name, icon, label]) => {
       const mobile = name === "grades" ? "Оценки" : name === "applications" ? "Справки" : name === "notifications" ? "Ещё" : name === "schedule" ? "Расписание" : "Главная";
@@ -403,7 +410,7 @@ async function loadDashboard() {
 function setView(name) {
   currentView = name;
   document.querySelectorAll(".nav-item").forEach((item) => item.classList.toggle("active", item.dataset.view === name));
-  el("#aiFab").hidden = user.role === "staff";
+  el("#aiFab").hidden = currentUser.role === "staff";
   if (name === "staff") return renderStaff();
   if (name === "home") {
     el("#pageTitle").textContent = "Доброе утро";
@@ -417,8 +424,8 @@ function setView(name) {
 
 function renderHome() {
   el("#todayDate").textContent = "Пятница, 20 ноября";
-  el("#pageTitle").textContent = `Доброе утро, ${user.name.split(" ")[0]}!`;
-  const firstName = user.name.split(" ")[0];
+  el("#pageTitle").textContent = `Доброе утро, ${currentUser.name.split(" ")[0]}!`;
+  const firstName = currentUser.name.split(" ")[0];
   view.innerHTML = `
     <div class="bento">
       <section class="card next-class">
@@ -429,8 +436,8 @@ function renderHome() {
       </section>
       <section class="card pulse-card">
         <div class="pulse-top"><strong>Академический пульс</strong><button class="text-button" type="button" data-go="grades">Подробнее</button></div>
-        <div class="score-ring" style="--score:${Math.round(user.average / 5 * 100)}%"><div><b>${String(user.average).replace(".", ",")}</b><small>из 5,00</small></div></div>
-        <div class="mini-stats"><div class="mini-stat"><small>Сессия</small><strong>${user.status}</strong></div><div class="mini-stat"><small>Стипендия</small><strong>${user.average >= 4.5 ? "18 400 ₽" : "Без стипендии"}</strong></div></div>
+        <div class="score-ring" style="--score:${Math.round(currentUser.average / 5 * 100)}%"><div><b>${String(currentUser.average).replace(".", ",")}</b><small>из 5,00</small></div></div>
+        <div class="mini-stats"><div class="mini-stat"><small>Сессия</small><strong>${currentUser.status}</strong></div><div class="mini-stat"><small>Стипендия</small><strong>${currentUser.average >= 4.5 ? "18 400 ₽" : "Без стипендии"}</strong></div></div>
         <button class="what-if" type="button" id="whatIf">Что если ближайший экзамен сдам на 5? →</button>
       </section>
     </div>
@@ -505,11 +512,11 @@ function renderGrades() {
     ["Командная разработка","Курсовая","excellent","5"],
     ["Профессиональная этика","Пересдача","debt","Долг"],
   ];
-  if (user.group === "ПС-21") rows[4][2] = "debt";
+  if (currentUser.group === "ПС-21") rows[4][2] = "debt";
   view.innerHTML = `
     <section class="card">
       <div class="card-head"><h3>Зачетка • Осенний семестр 2026</h3><button type="button" id="exportGrades">Экспорт PDF</button></div>
-      <div class="grades-summary"><div class="grade-stat"><small>Средний балл</small><strong>${String(user.average).replace(".", ",")}</strong></div><div class="grade-stat"><small>Сдано</small><strong>${user.status.includes("пересдача") || user.status.includes("Пересдача") ? "4 из 5" : "5 из 5"}</strong></div><div class="grade-stat"><small>Долги</small><strong>${user.status.includes("пересдача") || user.status.includes("Пересдача") ? "1" : "0"}</strong></div></div>
+      <div class="grades-summary"><div class="grade-stat"><small>Средний балл</small><strong>${String(currentUser.average).replace(".", ",")}</strong></div><div class="grade-stat"><small>Сдано</small><strong>${currentUser.status.includes("пересдача") || currentUser.status.includes("Пересдача") ? "4 из 5" : "5 из 5"}</strong></div><div class="grade-stat"><small>Долги</small><strong>${currentUser.status.includes("пересдача") || currentUser.status.includes("Пересдача") ? "1" : "0"}</strong></div></div>
       <div class="grade-table">${rows.map(([name, type, cls, grade]) => `<div class="grade-row"><strong>${name}</strong><span>${type}</span><span class="grade-value ${cls}">${grade}</span></div>`).join("")}</div>
     </section>`;
   el("#exportGrades").addEventListener("click", () => toast("Экспорт PDF подготовлен"));
@@ -577,7 +584,7 @@ async function submitApplication(event) {
 function openCertificate(id) {
   const modal = document.createElement("div");
   modal.className = "modal-backdrop";
-  modal.innerHTML = `<div class="modal"><div class="card-head" style="padding:0 0 14px"><h3>Справка об обучении</h3><button type="button" id="closeModal">×</button></div><div class="certificate"><img class="certificate-logo" src="./logo.png" alt="ПУЛЬС.Кампус" onerror="this.onerror=null;this.src='./logo-fallback.svg'"><p style="font-size:10px;color:var(--muted)">ПУЛЬС.Кампус • Конкурсный концепт</p><h2>Справка № ${String(id).padStart(4, "0")}</h2><p>Настоящая справка выдана <strong>${user.name}</strong>, обучающемуся по направлению «${user.program}».</p><div class="qr"></div><small style="color:var(--muted)">Для проверки документа в прототипе</small></div><div class="modal-actions"><button type="button" id="closeModal2">Закрыть</button><button class="primary-button" type="button" id="printCert">Печать / PDF</button></div></div>`;
+  modal.innerHTML = `<div class="modal"><div class="card-head" style="padding:0 0 14px"><h3>Справка об обучении</h3><button type="button" id="closeModal">×</button></div><div class="certificate"><img class="certificate-logo" src="./logo.png" alt="ПУЛЬС.Кампус" onerror="this.onerror=null;this.src='./logo-fallback.svg'"><p style="font-size:10px;color:var(--muted)">ПУЛЬС.Кампус • Конкурсный концепт</p><h2>Справка № ${String(id).padStart(4, "0")}</h2><p>Настоящая справка выдана <strong>${currentUser.name}</strong>, обучающемуся по направлению «${currentUser.program}».</p><div class="qr"></div><small style="color:var(--muted)">Для проверки документа в прототипе</small></div><div class="modal-actions"><button type="button" id="closeModal2">Закрыть</button><button class="primary-button" type="button" id="printCert">Печать / PDF</button></div></div>`;
   document.body.append(modal);
   modal.querySelectorAll("#closeModal,#closeModal2").forEach((button) => button.onclick = () => modal.remove());
   modal.querySelector("#printCert").onclick = () => window.print();
@@ -640,11 +647,39 @@ async function publishAnnouncement(event) {
 function openProfile() {
   const modal = document.createElement("div");
   modal.className = "modal-backdrop";
-  modal.innerHTML = `<div class="modal"><div class="card-head" style="padding:0 0 14px"><h3>Личные данные</h3><button type="button" id="closeProfile">×</button></div><div class="profile-modal-row"><span>ФИО</span><strong>${user.name}</strong></div><div class="profile-modal-row"><span>${user.role === "staff" ? "Должность" : "Факультет"}</span><strong>${user.faculty}</strong></div>${user.role !== "staff" ? `<div class="profile-modal-row"><span>Направление</span><strong>${user.program}</strong></div><div class="profile-modal-row"><span>Курс и группа</span><strong>${user.course} курс • ${user.group}</strong></div>` : ""}<div class="modal-actions" style="margin-top:16px"><button type="button" id="logout">Выйти из аккаунта</button></div></div>`;
+  modal.innerHTML = `<div class="modal"><div class="card-head" style="padding:0 0 14px"><h3>Личные данные</h3><button type="button" id="closeProfile">×</button></div><div class="profile-modal-row"><span>ФИО</span><strong>${currentUser.name}</strong></div><div class="profile-modal-row"><span>${currentUser.role === "staff" ? "Должность" : "Факультет"}</span><strong>${currentUser.faculty}</strong></div>${currentUser.role !== "staff" ? `<div class="profile-modal-row"><span>Направление</span><strong>${currentUser.program}</strong></div><div class="profile-modal-row"><span>Курс и группа</span><strong>${currentUser.course} курс • ${currentUser.group}</strong></div>` : ""}<div class="modal-actions" style="margin-top:16px"><button type="button" id="logout">Выйти из аккаунта</button></div></div>`;
   document.body.append(modal);
   modal.querySelector("#closeProfile").onclick = () => modal.remove();
-  modal.querySelector("#logout").onclick = async () => { await fetch("/api/logout", { method: "POST" }); location.reload(); };
+  modal.querySelector("#logout").onclick = logoutAccount;
   modal.onclick = (event) => { if (event.target === modal) modal.remove(); };
+}
+
+function logoutAccount() {
+  const pendingLogout = api("/api/logout", { method: "POST" }).catch(() => null);
+  try {
+    try {
+      if (localEngine) localEngine.clearSession();
+      for (const key of ["pulse_session", "pulse-session", "session"]) {
+        localStorage.removeItem(key);
+        sessionStorage.removeItem(key);
+      }
+    } catch (error) {
+      console.warn("Не удалось очистить локальный маркер сессии:", error);
+    }
+  } finally {
+    currentUser = null;
+    dashboard = null;
+    el("#shell").hidden = true;
+    el("#loginPage").hidden = false;
+    el("#aiPanel").hidden = true;
+    document.querySelectorAll(".modal-backdrop").forEach((modal) => modal.remove());
+    el("#login").value = "";
+    el("#password").value = "";
+    el("#loginError").textContent = "";
+    el("#loginButtonText").textContent = "Войти в кабинет";
+    toast("Вы вышли из аккаунта");
+  }
+  return pendingLogout;
 }
 
 document.addEventListener("click", (event) => {
@@ -655,8 +690,9 @@ document.addEventListener("click", (event) => {
   const cert = event.target.closest("[data-certificate]");
   if (cert) openCertificate(cert.dataset.certificate);
   if (event.target.closest("#profileMini")) openProfile();
+  if (event.target.closest("#headerLogout")) logoutAccount();
   if (event.target.closest("#whatIf")) {
-    const projected = ((user.average * 4 + 5) / 5).toFixed(2);
+    const projected = ((currentUser.average * 4 + 5) / 5).toFixed(2);
     toast(`Новый средний балл: ${projected.replace(".", ",")}`);
   }
 });

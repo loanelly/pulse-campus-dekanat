@@ -86,7 +86,6 @@ python -m unittest discover tests
 
 ## Для жюри
 
- 
 - [Открыть живое демо на GitHub Pages](https://loanelly.github.io/pulse-campus-dekanat/)
 - [Скачать PDF-отчёт о процессе разработки](./docs/opisanie-protsessa.pdf)
 - [Посмотреть репозиторий](https://github.com/loanelly/pulse-campus-dekanat)

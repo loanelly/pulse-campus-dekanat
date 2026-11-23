@@ -85,6 +85,7 @@ python -m unittest discover tests
 Тесты поднимают сервер на свободном порту и проверяют вход всех трёх ролей, отказ неверному паролю, защиту от IDOR, хранение PBKDF2-хешей и сквозной сценарий «заявка → деканат → готовая справка».
 
 ## Для жюри
+
  
 - [Открыть живое демо на GitHub Pages](https://loanelly.github.io/pulse-campus-dekanat/)
 - [Скачать PDF-отчёт о процессе разработки](./docs/opisanie-protsessa.pdf)
